@@ -1,5 +1,5 @@
 
-//////////////////////////////////////CHANGE_BALL_POS(): Tar bort bollen från VMEM, ändrar dess position och lägger till i VMEM igen
+//////////////////////////////////////CHANGE_BALL_POS(): Tar bort bollen frÃ¥n VMEM, Ã¤ndrar dess position och lÃ¤gger till i VMEM igen
 CHANGE_BALL_POS:
 	call	CLEAR_BALL
 	call	UPDATE_BALL
@@ -7,12 +7,36 @@ CHANGE_BALL_POS:
 	ret
 
 
-//////////////////////////////////////UPDATE_BALL(): Ändrar bollens position
+//////////////////////////////////////UPDATE_BALL(): Ã„ndrar bollens position
 UPDATE_BALL:
 	call	MOVE_BALL_X
 	call	MOVE_BALL_Y	
+	call	CHECK_SCORED
 	ret
 
+
+
+//////////////////////////////////////CHECK_SCORED(): kollar om nÃ¥gon spelare ska fÃ¥ poÃ¤ng
+CHECK_SCORED:
+	lds		r17,BPOSX
+	ldi		r16,8
+
+	cpse	r17,r16
+	jmp		CHECK_SCORED_RIGHT
+	call	RIGHT_PLAYER_SCORED
+	jmp		CHECK_SCORED_END
+
+CHECK_SCORED_RIGHT:
+	ldi		r16,-1
+	cpse	r17,r16
+	jmp		CHECK_SCORED_END
+	call	LEFT_PLAYER_SCORED
+CHECK_SCORED_END:
+	ret
+
+
+
+//////////////////////////////////////MOVE_BALL_X(): Flyttar bollen i x-led
 MOVE_BALL_X:
 	lds		r17,BPOSX
 	lds		r16,BSPEEDX
@@ -21,27 +45,32 @@ MOVE_BALL_X:
 	cpi		r16,$ff
 	brne	POSITIVE_SPEEDX
 
-	subi	r17,1
+	dec		r17
 	jmp		SPEEDX_DONE
 POSITIVE_SPEEDX:
-	add		r17,r16
+	inc		r17
 SPEEDX_DONE:
-	
 	sts		BPOSX,r17
 	ret
 
+
+//////////////////////////////////////MOVE_BALL_Y(): Flyttar bollen i y-led
 MOVE_BALL_Y:
 	lds		r16,BSPEEDY
 	lds		r17,BPOSY
 	call	CHECK_BOUNCE_Y
 
 	cpi		r16,$ff
-	brne	POSITIVE_SPEEDY
-
-	subi	r17,1
+	breq	NEGATIVE_SPEEDY
+	cpi		r16,1
+	breq	POSITIVE_SPEEDY
+	jmp		SPEEDY_DONE
+	
+NEGATIVE_SPEEDY:
+	dec		r17
 	jmp		SPEEDY_DONE
 POSITIVE_SPEEDY:
-	add		r17,r16
+	inc		r17
 SPEEDY_DONE:
 	sts		BPOSY,r17
 	ret
@@ -74,8 +103,12 @@ CHECK_BOUNCE_X_DONE:
 
 //////////////////////////////////////CHECK_BOUNCE_X_PLAYER_LEFT(r19=BSPEEDY) -> r16=BSPEEDX, r19=BSPEEDY
 CHECK_BOUNCE_X_PLAYER_LEFT:
-	lds		r20,LPOSY
+	push	r17
 	lds		r18,BPOSY
+	ldi		r17,1
+	
+CHECK_X_LEFT:
+	lds		r20,LPOSY
 
 	cp		r20,r18
 	breq	HIT_TOP_LEFT
@@ -87,35 +120,60 @@ CHECK_BOUNCE_X_PLAYER_LEFT:
 	dec		r20
 	cp		r20,r18
 	breq	HIT_BOTTOM_LEFT
-	call	RIGHT_PLAYER_SCORED
-	jmp		CHECK_BOUNCE_X_LEFT_DONE
+	dec		r17
+	brmi	LEFT_MOVE_DONE
+	
+	call	PRE_MOVE
+	jmp		CHECK_X_LEFT
+LEFT_MOVE_DONE:
+	jmp		CHECK_BOUNCE_X_RIGHT_DONE
 
 HIT_TOP_LEFT:
 	ldi		r16,-1
-	ldi		r19,-1
-	call	SOUND
+	ldi		r19,1
+	call	SOUND_LEFT
 	jmp		CHECK_BOUNCE_X_LEFT_DONE
 
 HIT_MIDDLE_LEFT:
 	ldi		r16,-1
 	clr		r19
-	call	SOUND
+	call	SOUND_LEFT
 	jmp		CHECK_BOUNCE_X_LEFT_DONE
 
 HIT_BOTTOM_LEFT:
 	ldi		r16,-1
-	ldi		r19,1
-	call	SOUND
+	ldi		r19,-1
+	call	SOUND_LEFT
 	jmp		CHECK_BOUNCE_X_LEFT_DONE
 
 CHECK_BOUNCE_X_LEFT_DONE:
+	pop		r17
+	ret
+
+
+
+PRE_MOVE:
+	lds		r21,BSPEEDY
+
+	cpi		r21,-1
+	breq	NEGATIVE_Y
+	add		r18,r21
+	jmp		MOVE_DONE
+NEGATIVE_Y:
+	dec		r18
+
+MOVE_DONE:
 	ret
 
 
 //////////////////////////////////////CHECK_BOUNCE_X_PLAYER_RIGHT(r19=BSPEEDY) -> r16=BSPEEDX, r19=BSPEEDY
 CHECK_BOUNCE_X_PLAYER_RIGHT:
-	lds		r20,RPOSY
+	push	r17
 	lds		r18,BPOSY
+	ldi		r17,1
+	
+CHECK_X_RIGHT:
+	lds		r20,RPOSY
 
 	cp		r20,r18
 	breq	HIT_TOP_RIGHT
@@ -128,61 +186,72 @@ CHECK_BOUNCE_X_PLAYER_RIGHT:
 	cp		r20,r18
 	breq	HIT_BOTTOM_RIGHT
 
-	call	LEFT_PLAYER_SCORED
+	dec		r17
+	brmi	RIGHT_MOVE_DONE
+	
+	call	PRE_MOVE
+	jmp		CHECK_X_RIGHT
+RIGHT_MOVE_DONE:
 	jmp		CHECK_BOUNCE_X_RIGHT_DONE
+	
 
 HIT_TOP_RIGHT:
 	ldi		r16,1
-	ldi		r19,-1
-	call	SOUND
+	ldi		r19,1
+	call	SOUND_RIGHT
 	jmp		CHECK_BOUNCE_X_RIGHT_DONE
 
 HIT_MIDDLE_RIGHT:
 	ldi		r16,1
 	clr		r19
-	call	SOUND
+	call	SOUND_RIGHT
 	jmp		CHECK_BOUNCE_X_RIGHT_DONE
 
 HIT_BOTTOM_RIGHT:
 	ldi		r16,1
-	ldi		r19,1
-	call	SOUND
+	ldi		r19,-1
+	call	SOUND_RIGHT
 	jmp		CHECK_BOUNCE_X_RIGHT_DONE
 	
 CHECK_BOUNCE_X_RIGHT_DONE:
+	pop		r17
 	ret
 
 
 
-//////////////////////////////////////LEFT_PLAYER_SCORED(): tar bort allt ur videominnet och sätter tillbaka bollen i mitten av planen, ökar poängen
+//////////////////////////////////////LEFT_PLAYER_SCORED(): tar bort allt ur videominnet och sÃ¤tter tillbaka bollen i mitten av planen, Ã¶kar poÃ¤ngen
 LEFT_PLAYER_SCORED:
+	call	SOUND_LEFT
+	ldi		r20,-1
 	call	RESET_VMEM	
 	lds		r20,LPOINT
 	inc		r20
 	cpi		r20,10
-	breq	LEFT_WON
+	breq	END_GAME_LEFT
+	brne	DISPLAY_LEFT_SCORE
+END_GAME_LEFT:
+	call	LEFT_WON
+DISPLAY_LEFT_SCORE:
 	sts		LPOINT,r20
 	call	LEFT8_WRITE
-	jmp		LEFT_PLAYER_SCORED_END
-LEFT_WON:
-	call	GAME_OVER
-LEFT_PLAYER_SCORED_END:
 	ret
 
 
-//////////////////////////////////////RIGHT_PLAYER_SCORED(): tar bort allt ur videominnet och sätter tillbaka bollen i mitten av planen, ökar poängen
+//////////////////////////////////////RIGHT_PLAYER_SCORED(): tar bort allt ur videominnet och sÃ¤tter tillbaka bollen i mitten av planen, Ã¶kar poÃ¤ngen
 RIGHT_PLAYER_SCORED:
+	call	SOUND_RIGHT
+	ldi		r20,1
 	call	RESET_VMEM
 	lds		r20,RPOINT
 	inc		r20
 	cpi		r20,10
-	breq	RIGHT_WON
+	breq	END_GAME_RIGHT
+	brne	DISPLAY_RIGHT_SCORE
+END_GAME_RIGHT:
+	call	RIGHT_WON
+DISPLAY_RIGHT_SCORE:
 	sts		RPOINT,r20
 	call	RIGHT8_WRITE
-	jmp		RIGHT_PLAYER_SCORED_END
-RIGHT_WON:
-	call	GAME_OVER
-RIGHT_PLAYER_SCORED_END:
 	ret
 
 
@@ -209,13 +278,38 @@ BOUNCE_Y_DONE:
 	ret
 
 
-//////////////////////////////////////SOUND(): laddar r16 och r17 med pitch och length på tonen
+//////////////////////////////////////SOUND(): laddar r16 och r17 med pitch och length pÃ¥ tonen
+SOUND_LEFT:
+	push	r16
+	push	r17
+
+	ldi		r17,80
+	ldi		r16,60
+	call	BEEP
+
+	pop		r17
+	pop		r16
+
+	ret
+
+SOUND_RIGHT:
+	push	r16
+	push	r17
+
+	ldi		r17,75
+	ldi		r16,75
+	call	BEEP
+
+	pop		r17
+	pop		r16
+	ret
+
 SOUND:
 	push	r16
 	push	r17
 
-	ldi		r17,3
-	ldi		r16,10
+	ldi		r17,100
+	ldi		r16,50
 	call	BEEP
 
 	pop		r17
