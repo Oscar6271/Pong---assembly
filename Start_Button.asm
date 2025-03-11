@@ -1,12 +1,7 @@
-;
-; Lab2 TSIU51 Read.asm
-;
-; Created: 2025-02-05 13:05:18
-; Author : emian774
-;
-// En rutin för ett start tillstånd som väntar på ett knapptryck från l1 och då kommer gå ut ur loopen
+
+// En rutin fÃ¶r ett start tillstÃ¥nd som vÃ¤ntar pÃ¥ ett knapptryck frÃ¥n l1 och dÃ¥ kommer gÃ¥ ut ur loopen
 // START_BUTTON() r17=Val av knapp
-// Accepterade värden på r17:
+// Accepterade vÃ¤rden pÃ¥ r17:
 // 1=R1 ; 2=R2 ; 3=L1 ; 4=L2 ; 5=JOYSTICK_L ; 6=JOYSTICK_R
 
 
@@ -31,7 +26,7 @@ START_BUTTON1:
 	ret
 
 
-// Translate avkodar den avlästa datan från r22 och gör om det till siffror 0-6 i r16
+// Translate avkodar den avlÃ¤sta datan frÃ¥n r22 och gÃ¶r om det till siffror 0-6 i r16
 TRANSLATE:
 	cpi		r22,2
 	breq	RI1
@@ -68,7 +63,7 @@ JOY_RIGHT:
 TRA_DONE:
 	ret
 
-// Skickar adress och read-bit + läser data
+// Skickar adress och read-bit + lÃ¤ser data
 TWI_READ_BUTTON:
 	call	START
 	mov		r19,r21
@@ -77,24 +72,24 @@ TWI_READ_BUTTON:
 	call	STOP
 	ret
 
-// Läser in data till r22
+// LÃ¤ser in data till r22
 SWITCHES:
 	push	r20
 
 	ldi		r20,8				;loop x 8
 SWITCHES_1:
-	cbi		DDRC, SCL			;Höjer klockpulsen
+	cbi		DDRC, SCL			;HÃ¶jer klockpulsen
 	
-	sbic	PINC, SDA			;skippar om SDA är hög
+	sbic	PINC, SDA			;skippar om SDA Ã¤r hÃ¶g
 	ori		r22,0
 	
-	sbis	PINC, SDA			;skippar om SDA är låg
+	sbis	PINC, SDA			;skippar om SDA Ã¤r lÃ¥g
 	ori		r22,1
 
 	call	WAIT
 
 	lsl		r22					;left shiftar
-	sbi		DDRC, SCL			;sänker klockpulsen
+	sbi		DDRC, SCL			;sÃ¤nker klockpulsen
 	call	WAIT
 	
 	dec		r20
@@ -104,7 +99,7 @@ SWITCHES_1:
 	pop		r20
 	ret
 
-TWI_81_WRITE_BUTTON:				;Skickar adressen från r21
+TWI_81_WRITE_BUTTON:				;Skickar adressen frÃ¥n r21
 	push	r20
 	push	r19
 
