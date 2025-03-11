@@ -1,9 +1,4 @@
-/*
- * Effects.asm
- *
- *  Created: 2025-02-26 11:33:49
- *   Author: ludbr478
- */ 
+
  //r17 bitmönster
 
  //BGR rad
