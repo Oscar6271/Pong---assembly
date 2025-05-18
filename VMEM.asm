@@ -38,25 +38,14 @@
 	BSPEEDX:	.byte 1
 	BSPEEDY:	.byte 1
 
-.org SRAM_START+100
 	RPOSY:		.byte 1
-
-.org SRAM_START+110
 	RCOLOR:		.byte 1
-
-.org SRAM_START+120
 	RPOINT:		.byte 1
 
-.org SRAM_START+130
 	LPOSY:		.byte 1
-
-.org SRAM_START+140
 	LCOLOR:		.byte 1
-
-.org SRAM_START+150
 	LPOINT:		.byte 1
 
-.org SRAM_START+160
 	LINE:		.byte 1	
 	.cseg
 
